@@ -2,6 +2,11 @@ const std = @import("std");
 const assert = std.debug.assert;
 const approxEq = std.math.approxEq;
 
+pub const MixedNumber = struct {
+    whole: i32,
+    fraction: Fraction,
+};
+
 pub const Fraction = struct {
     numerator: i32,
     denominator: i32,
@@ -16,6 +21,16 @@ pub fn mediant(a: Fraction, b: Fraction) Fraction {
     return Fraction{
         .numerator = a.numerator + b.numerator,
         .denominator = a.denominator + b.denominator,
+    };
+}
+
+pub fn floatToNumber(n: f32, limit: i32) MixedNumber {
+    var whole = @floatToInt(i32, n);
+    var whats_left = n - @intToFloat(f32, whole);
+    var fraction = findFraction(whats_left, limit);
+    return MixedNumber{
+        .whole = whole,
+        .fraction = fraction,
     };
 }
 
@@ -55,6 +70,69 @@ fn equalFractions(a: Fraction, b: Fraction) bool {
     return a.numerator == b.numerator and a.denominator == b.denominator;
 }
 
+fn equalNumbers(a: MixedNumber, b: MixedNumber) bool {
+    return a.whole == b.whole and equalFractions(a.fraction, b.fraction);
+}
+
+test "float to number" {
+    const TestCase = struct {
+        input: f32,
+        limit: i32,
+        expected: MixedNumber,
+    };
+    var testCases = [_]TestCase{
+        TestCase{
+            .input = 0.5,
+            .limit = 100,
+            .expected = MixedNumber{
+                .whole = 0,
+                .fraction = Fraction{
+                    .numerator = 1,
+                    .denominator = 2,
+                },
+            },
+        },
+        TestCase{
+            .input = 0.33333,
+            .limit = 100,
+            .expected = MixedNumber{
+                .whole = 0,
+                .fraction = Fraction{
+                    .numerator = 1,
+                    .denominator = 3,
+                },
+            },
+        },
+        TestCase{
+            .input = 2.33333,
+            .limit = 100,
+            .expected = MixedNumber{
+                .whole = 2,
+                .fraction = Fraction{
+                    .numerator = 1,
+                    .denominator = 3,
+                },
+            },
+        },
+        TestCase{
+            .input = 1.9090909,
+            .limit = 10000000,
+            .expected = MixedNumber{
+                .whole = 1,
+                .fraction = Fraction{
+                    .numerator = 10,
+                    .denominator = 11,
+                },
+            },
+        },
+    };
+
+    for (testCases) |testCase| {
+        var actual = floatToNumber(testCase.input, testCase.limit);
+        assert(equalNumbers(actual, testCase.expected));
+    }
+}
+
 test "find fraction" {
     const TestCase = struct {
         input: f32,
@@ -90,7 +168,6 @@ test "find fraction" {
 
     for (testCases) |testCase| {
         var actual = findFraction(testCase.input, testCase.limit);
-        std.debug.warn("\nactual: {}; expected: {}", .{actual, testCase.expected});
         assert(equalFractions(actual, testCase.expected));
     }
 }
