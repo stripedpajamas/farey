@@ -21,6 +21,7 @@ $ ./farey 0.1431
 ## todo
 - allow passing in max denominator
 - allow passing in numbers >1 and return mixed number
+- don't use testing.allocator obvs
 
 
 ## license
